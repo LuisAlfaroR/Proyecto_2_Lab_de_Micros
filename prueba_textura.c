@@ -5,15 +5,29 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <SOIL/SOIL.h>
-#include <stdlib.h>
-#include <time.h>
 
-static GLuint texName, texBola, texBloque;
+//Variables de texturas de los elementos del juego
+static GLuint texName, texBola, texBloque,texbarra, texcora;
+
+//Valores iniciales de la pantalla
 static GLint ancho = 100, alto = 100;
-static GLint xBola = 250, yBola = 50, deltaX = -5, deltaY = 5;
+
+//Variables de posición de la bola
+static GLint xBola = 300, yBola = 100, deltaX = -5, deltaY = 5;
+
+//Variables de posición y existencia de los bloques
 static GLboolean bloques[13][5];
 static int bloquesRestantes = 5*13;
 static int margen = 5, radio = 8;
+
+//Variables de vidas restantes
+static GLint vidas=3;
+
+//Variables iniciales de la barra
+static GLint posxbar1=300;
+static GLint posxbar2=425;
+static GLint posybar1=100;
+static GLint posybar2=125;
 
 void init(void){
 	glClearColor(0.0, 0.0, 0.0, 0.0);
@@ -22,7 +36,7 @@ void init(void){
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 	
 	texName = SOIL_load_OGL_texture(
-		"fondogeneral.png",
+		"fondogeneral(4).png",
 		SOIL_LOAD_AUTO,
 		SOIL_CREATE_NEW_ID,
 		SOIL_FLAG_INVERT_Y
@@ -34,6 +48,35 @@ void init(void){
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,GL_LINEAR);
 	
+	//Textura de la barra
+	texbarra = SOIL_load_OGL_texture(
+		"barra.jpeg",
+		SOIL_LOAD_AUTO,
+		SOIL_CREATE_NEW_ID,
+		SOIL_FLAG_INVERT_Y
+	);
+	
+	glBindTexture(GL_TEXTURE_2D, texbarra);
+	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+	
+	//Textura del corazón
+	texcora = SOIL_load_OGL_texture(
+		"corazon.jpg",
+		SOIL_LOAD_AUTO,
+		SOIL_CREATE_NEW_ID,
+		SOIL_FLAG_INVERT_Y
+	);
+	
+	glBindTexture(GL_TEXTURE_2D, texcora);
+	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+	
+	//Textura de la bola
 	texBola = SOIL_load_OGL_texture(
 		"esfera.png",
 		SOIL_LOAD_AUTO,
@@ -48,7 +91,7 @@ void init(void){
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,GL_LINEAR);
 	
 	texBloque = SOIL_load_OGL_texture(
-		"bloque.jpeg",
+		"bloque(2).jpeg",
 		SOIL_LOAD_AUTO,
 		SOIL_CREATE_NEW_ID,
 		SOIL_FLAG_INVERT_Y
@@ -75,14 +118,14 @@ void display(void){
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	
-	/*
+	
 	glBindTexture(GL_TEXTURE_2D, texName);
 	glBegin(GL_QUADS);
 		glTexCoord2f(0.0, 0.0); glVertex3f(0.0, 0.0, 0.0);
 		glTexCoord2f(0.0, 1.0); glVertex3f(0.0, alto, 0.0);
 		glTexCoord2f(1.0, 1.0); glVertex3f(ancho, alto, 0.0);
 		glTexCoord2f(1.0, 0.0); glVertex3f(ancho, 0.0, 0.0);
-	glEnd();*/
+	glEnd();
 	
 	
 	glBindTexture(GL_TEXTURE_2D, texBola);
@@ -93,6 +136,30 @@ void display(void){
 		glTexCoord2f(1.0, 0.0); glVertex3f(xBola + 20, yBola, 0.2);
 	glEnd();
 	
+	//Dibujar barra
+	posybar1=alto/10;
+	posybar2=posybar1+25;
+	glBindTexture(GL_TEXTURE_2D, texbarra);
+	glBegin(GL_QUAD_STRIP);
+		glTexCoord2f(0.0, 0.0); glVertex3f(posxbar1, posybar1, 0.2);
+		glTexCoord2f(0.0, 1.0); glVertex3f(posxbar1, posybar2, 0.2);
+		glTexCoord2f(1.0, 1.0); glVertex3f(posxbar2, posybar1, 0.2);
+		glTexCoord2f(1.0, 0.0); glVertex3f(posxbar2, posybar2, 0.2);
+	glEnd();
+	
+	//Dibujar corazones de las vidas
+	glBindTexture(GL_TEXTURE_2D, texcora);
+	int siguiente=0;
+	for (int i=0; i<vidas; i++){
+		glBegin(GL_QUAD_STRIP);
+		glTexCoord2f(0.0, 0.0); glVertex3f(ancho-siguiente, 10, 0.2);
+		glTexCoord2f(0.0, 1.0); glVertex3f(ancho-siguiente, 40, 0.2);
+		glTexCoord2f(1.0, 1.0); glVertex3f(ancho-20-siguiente, 10, 0.2);
+		glTexCoord2f(1.0, 0.0); glVertex3f(ancho-20-siguiente, 40, 0.2);
+		glEnd();
+		siguiente=siguiente+40;
+	}
+		
 	//Dibujar bloques
 	glBindTexture(GL_TEXTURE_2D, texBloque);
 	
@@ -100,7 +167,7 @@ void display(void){
 	int altoBloque = alto / (5 * 4);
 	int margen = 5;
 	int offsetY = (3 * alto) / 4;
-	
+
 	for (int i = 0; i < 13; i++) {
 		for (int j = 0; j < 5; j++) {
 			if (bloques[i][j]) {
@@ -132,16 +199,35 @@ void reshape(int w, int h){
 
 void mueveBola(void)
 {	
+   //int xBolaant=xBola;
    xBola += deltaX;
    yBola += deltaY;
+   int mitadbarra=((posxbar2-posxbar1-1)/2);
+   //int altbarra=(posybar2-posybar1);
    
    glutPostRedisplay();
    
+   //Comprobación de choque de la bola con las paredes del área de juego
    if (xBola >= (ancho - 20)) deltaX *= -1;
    if (yBola >= (alto - 20)) deltaY *= -1;
    if (xBola < 0) deltaX *= -1;
-   if (yBola < 0) deltaY *= -1;
+   if (yBola < 0) {deltaY *= -1; vidas=vidas-1; xBola = 300; yBola = 100;}
+   if (vidas==0){exit(0);}
    
+   //Comprobación de choque de la bola con la barra
+   if ((yBola == posybar2)&&(xBola<=(posxbar1+mitadbarra))&&(xBola>=posxbar1)){
+	   deltaY *= -1; 
+   }
+   
+   if ((yBola == posybar2)&&(xBola>=(posxbar2-mitadbarra))&&(xBola<=posxbar2)){
+	   deltaY *= -1; 
+   }
+   
+   if ((yBola < posybar2)&&((xBola==posxbar1)||(xBola==posxbar2))){
+	   deltaX *= -1;
+   }
+
+   //Comprobación de choque de la barra con los bloques
    for (int i = 0; i < 13; i++) {
 		for (int j = 0; j < 5; j++) {
 			
@@ -206,6 +292,18 @@ void keyboard (unsigned char key, int x, int y)
       case 27:
          glutIdleFunc(NULL);
          break;
+      case 'x':
+	   if(posxbar1<=(ancho - 125)){
+	   posxbar1=posxbar1+10;
+	   posxbar2=posxbar2+10;
+	   glutPostRedisplay();}
+	   break;
+	   case 'z':
+	   if(posxbar1>=0.0){
+	   posxbar1=posxbar1-10;
+	   posxbar2=posxbar2-10;
+	   glutPostRedisplay();}
+	   break;
       default:
          break;
    }
