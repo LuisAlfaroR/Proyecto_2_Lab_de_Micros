@@ -1,4 +1,8 @@
 
+#include <errno.h>
+#include <wiringPi.h>
+#include <softTone.h>
+
 #include <X11/Xlib.h>
 #include <GL/glx.h>
 #include <GL/glut.h>
@@ -7,10 +11,13 @@
 #include <SOIL/SOIL.h>
 #include <time.h>
 #include <cmath>
-#include <string>
+#include <string.h>
 #include <sstream>
 #include <iostream>
 
+#define	PIN 0
+
+int reset=0;
 //Variable de avance en el juego
 static int avanza=0;
 
@@ -18,13 +25,13 @@ static int avanza=0;
 static GLuint texName, texBola, texBloque,texbarra, texcora,texinicio,texGameover, texFondo,texGane, texFiesta;
 
 //Valores iniciales de la pantalla
-static GLint ancho = 100, alto = 100;
+static GLint ancho = 1366, alto = 700;
 char nombre[100];
 int indiceNombre = 0;
 static int puede=0;
 
 //Variables de posición de la bola
-static GLint xBola = 360, yBola = 50, deltaX = -5, deltaY = 5;
+static GLint xBola = 681, yBola = 100, deltaX = -8, deltaY = 8;
 
 //Variables de posición y existencia de los bloques
 static GLboolean bloques[13][5];
@@ -35,11 +42,11 @@ static int margen = 5, radio = 8;
 static GLint vidas=3;
 
 //Variables iniciales de la barra
-static GLint posxbar1=320;
-static GLint posxbar2=445;
-static GLint posybar1=55;
-static GLint posybar2=80;
-static GLint anchobarra=125;
+static GLint posxbar1=579;
+static GLint posxbar2=784;
+static GLint posybar1=70;
+static GLint posybar2=100;
+static GLint anchobarra=10;
 
 //Variables de pantalla al perder
 
@@ -80,7 +87,32 @@ int posyL1 = 275, posyL2 = 215, posyL3 = 175, posyL4 = 135, posyL5 = 95, posyL6 
 //*****************Inicio de Código*************************************************************************************
 //**********************************************************************************************************************
 
+void reiniciar()
+{
+		avanza=0;
+		vidas=3; puede=0; xBola = (ancho*0.5); yBola = posybar2+5; posxbar1=(ancho*0.5-ancho*0.1);
+		bloquesRestantes = 5*13;indiceNombre = 0; 
+		for(int i = 0; i < 101; i++){
+		nombre[i]='\0';
+		}
+		for (int i = 0; i < 13; i++) {
+			for (int j = 0; j < 5; j++) {
+				if (bloques[i][j]==0) {
+					bloques[i][j]=1;
+					}}}
+}
 
+void tono()
+{
+
+  softToneCreate (PIN) ;
+  softToneWrite (PIN,500) ;
+  delay (100) ;
+  softToneWrite (PIN,0) ;
+  
+   
+  }
+  
 void drawBitmapText(char *string,float x,float y,float z) 
 {  
 	char *c;
@@ -231,7 +263,7 @@ void init(void){
 	
 	//Textura fondo del juego
 	texName = SOIL_load_OGL_texture(
-		"fondogeneral(4).png",
+		"fondoGeneral.jpg",
 		SOIL_LOAD_AUTO,
 		SOIL_CREATE_NEW_ID,
 		SOIL_FLAG_INVERT_Y
@@ -259,7 +291,7 @@ void init(void){
 	
 	//Textura del corazón
 	texcora = SOIL_load_OGL_texture(
-		"corazon.jpg",
+		"CoRazon.png",
 		SOIL_LOAD_AUTO,
 		SOIL_CREATE_NEW_ID,
 		SOIL_FLAG_INVERT_Y
@@ -306,12 +338,18 @@ void init(void){
 }
 
 void display(void){
+	
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glEnable(GL_TEXTURE_2D);
 	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
 	
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	
+	reset=digitalRead(3);
+	if(reset==1){
+		reiniciar();
+		glutPostRedisplay();}
 	
 	//Si aún está en la pantalla de inicio
 	if(avanza==0){
@@ -325,23 +363,23 @@ void display(void){
 		
 		glDisable(GL_TEXTURE_2D);
 		glColor3f(1,1,1);
-		//drawStrokeText("BIENVENIDO A MICRONOID",410,550,0.2);
-		drawStrokeText("Bienvenido a Micronoid",ancho*0.25,alto*0.76,0.2);
+		drawStrokeText("Bienvenido a Micronoid",ancho*0.37,alto*0.88,0.2);
+		//drawStrokeText("Bienvenido a Micronoid",512,455,0.2);
 		
 		glColor3f(1,1,1);
-		drawStrokeText("Lab de Eestructura de Microprocesadores",ancho*0.12,alto*0.67,0.2);
+		drawStrokeText("Lab de Estructura de Microprocesadores",ancho*0.27,alto*0.7,0.2);
 		
 		glColor3f(1,1,1);
-		drawStrokeText("2do Semestre-2016",ancho*0.28,alto*0.62,0.2);
+		drawStrokeText("2do Semestre-2016",ancho*0.37,alto*0.5,0.2);
 		
 		glColor3f(1,1,1);
-		drawStrokeText("Ingrese el nombre del jugador",ancho*0.21,alto*0.52,0.2);
+		drawStrokeText("Ingrese el nombre del jugador y presione ENTER",ancho*0.25,alto*0.35,0.2);
+		
+		//glColor3f(1,1,1);
+		//drawStrokeText("y presione enter",ancho*0.3,alto*0.45,0.2);
 		
 		glColor3f(1,1,1);
-		drawStrokeText("y presione enter",ancho*0.3,alto*0.45,0.2);
-		
-		glColor3f(1,1,1);
-		drawStrokeText(nombre, ancho*0.35,alto*0.38,0.2);
+		drawStrokeText(nombre, ancho*0.44,alto*0.3,0.2);
 		glEnable(GL_TEXTURE_2D);
 	}
 	
@@ -357,7 +395,7 @@ void display(void){
 				glVertex3f(750, 200, 0.0);
 			glEnd();*/
 			glColor3f(0,0,1);
-			drawStrokeText("PRESIONE X PARA INICIAR",ancho*0.3,alto*0.40,0.2);
+			drawStrokeText("PRESIONE X PARA INICIAR",ancho*0.4,alto*0.45,0.2);
 			glEnable(GL_TEXTURE_2D);
 			}
 		
@@ -371,9 +409,8 @@ void display(void){
 			glVertex3f(ancho-100, 10, 0.0);
 		glEnd();*/
 		glColor3f(0,0,1);
-		drawStrokeText(nombre, ancho-200,10,0.2);
+		drawStrokeText(nombre, ancho-250,10,0.2);
 		glEnable(GL_TEXTURE_2D);
-		
 		glBindTexture(GL_TEXTURE_2D, texName);
 		glBegin(GL_QUADS);
 			glTexCoord2f(0.0, 0.0); glVertex3f(0.0, 0.0, 0.0);
@@ -381,7 +418,6 @@ void display(void){
 			glTexCoord2f(1.0, 1.0); glVertex3f(ancho, alto, 0.0);
 			glTexCoord2f(1.0, 0.0); glVertex3f(ancho, 0.0, 0.0);
 		glEnd();
-		
 		//Dibujar la bola
 		glBindTexture(GL_TEXTURE_2D, texBola);
 		glBegin(GL_QUADS);
@@ -393,25 +429,25 @@ void display(void){
 		
 		//Dibujar barra
 		anchobarra=ancho*0.15625;
-		posybar2=alto-(alto*0.9);
-		posybar1=posybar2-25;
+		posxbar2=posxbar1+anchobarra;
 		glBindTexture(GL_TEXTURE_2D, texbarra);
+		//glBindTexture(GL_TEXTURE_2D, texcora);
 		glBegin(GL_QUAD_STRIP);
 			glTexCoord2f(0.0, 0.0); glVertex3f(posxbar1, posybar1, 0.2);
 			glTexCoord2f(0.0, 1.0); glVertex3f(posxbar1, posybar2, 0.2);
-			glTexCoord2f(1.0, 1.0); glVertex3f(posxbar1+anchobarra, posybar1, 0.2);
-			glTexCoord2f(1.0, 0.0); glVertex3f(posxbar1+anchobarra, posybar2, 0.2);
+			glTexCoord2f(1.0, 1.0); glVertex3f(posxbar2, posybar1, 0.2);
+			glTexCoord2f(1.0, 0.0); glVertex3f(posxbar2, posybar2, 0.2);
 		glEnd();
 		
 		//Dibujar corazones de las vidas
 		glBindTexture(GL_TEXTURE_2D, texcora);
 		int siguiente=0;
 		for (int i=0; i<vidas; i++){
-			glBegin(GL_QUAD_STRIP);
-			glTexCoord2f(0.0, 0.0); glVertex3f(ancho-siguiente, 10, 0.2);
-			glTexCoord2f(0.0, 1.0); glVertex3f(ancho-siguiente, 40, 0.2);
-			glTexCoord2f(1.0, 1.0); glVertex3f(ancho-20-siguiente, 10, 0.2);
-			glTexCoord2f(1.0, 0.0); glVertex3f(ancho-20-siguiente, 40, 0.2);
+			glBegin(GL_QUADS);
+				glTexCoord2f(0.0, 0.0); glVertex3f(ancho-50-siguiente, 10, 0.4);
+				glTexCoord2f(0.0, 1.0); glVertex3f(ancho-50-siguiente, 40, 0.4);
+				glTexCoord2f(1.0, 1.0); glVertex3f(ancho-siguiente, 40, 0.4);
+				glTexCoord2f(1.0, 0.0); glVertex3f(ancho-siguiente, 10, 0.4);
 			glEnd();
 			siguiente=siguiente+40;
 		}
@@ -518,26 +554,26 @@ void display(void){
 			posyL7=posyL6-60;} // se declara el salto a la finalizacion del programa
 			
 		glColor3f(1,1,1);
-		drawStrokeText("GRACIAS POR JUGAR MICRONOID",ancho*0.25,posyL1,0.1);
+		drawStrokeText("GRACIAS POR JUGAR MICRONOID",ancho*0.4,posyL1,0.1);
 		
 		
 		glColor3f(1,1,1);
-		drawStrokeText("LUIS ALFARO ROJAS CARNET: 201214010",ancho*0.2,posyL2,0.1);
+		drawStrokeText("LUIS ALFARO ROJAS CARNET: 201214010",ancho*0.38,posyL2,0.1);
 		
 		glColor3f(1,1,1);
-		drawStrokeText("DAVID MARIN SOTO CARNET: 201214031",0.2*ancho,posyL3,0.1);
+		drawStrokeText("DAVID MARIN SOTO CARNET: 201214031",0.38*ancho,posyL3,0.1);
 		
 		glColor3f(1,1,1);
-		drawStrokeText("DANIEL ROJAS CHACON CARNET: 201246882",ancho*0.2,posyL4,0.1);
+		drawStrokeText("DANIEL ROJAS CHACON CARNET: 201246882",ancho*0.38,posyL4,0.1);
 		
 		glColor3f(1,1,1);
-		drawStrokeText("DANIEL VIQUEZ GOMEZ CARNET: 201236251",ancho*0.2,posyL5,0.1);
+		drawStrokeText("DANIEL VIQUEZ GOMEZ CARNET: 201236251",ancho*0.38,posyL5,0.1);
 		
 		glColor3f(1,1,1);
-		drawStrokeText("XXX",ancho*0.5,posyL6,0.1);
+		drawStrokeText("ARM CORTEX-A7 900MHz",ancho*0.4,posyL6,0.1);
 		
 		glColor3f(1,1,1);
-		drawStrokeText("PRESIONE ENTER PARA TERMINAR",ancho*0.24,posyL7,0.1);
+		drawStrokeText("PRESIONE ENTER PARA TERMINAR",ancho*0.4,posyL7,0.1);
 		glEnable(GL_TEXTURE_2D);
 		}	
 		
@@ -550,49 +586,109 @@ void reshape(int w, int h){
 	glViewport(0, 0, (GLsizei) w, (GLsizei) h);
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
+	
 	glOrtho(0.0, (GLfloat) w, 0, (GLfloat) h, -1, 1);
+	//gluPerspective(60.0, (GLfloat) w / (GLfloat) h, 10, 1000);
+	
+	
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
+	
+	//glTranslatef(-400.0, -250.0, -650.0);
+	//glRotatef(-20.0, 1, 0, 0);
+	//glRotatef(-20.0, 0, 1, 0);
+	
 	ancho = w;
 	alto = h;
 }
 
 void mueveBola(void)
 {	
+
    //int xBolaant=xBola;
-   if((puede==0)&&(vidas!=3)){
+   if((puede==0)&&(vidas!=4)){
 	   xBola +=0;
 	   yBola +=0;}
 	   
    else{
-   xBola += deltaX;
-   yBola += deltaY;}
-   int mitadbarra=((posxbar2-posxbar1-1)/2);
+	   xBola += deltaX;
+	   yBola += deltaY;
+	   }
+   //int mitadbarra=(ancho*0.15625)/2;
+   //posybar2=alto;
    //int altbarra=(posybar2-posybar1);
    
-   glutPostRedisplay();
-   
    //Comprobación de choque de la bola con las paredes del área de juego
-   if (xBola >= (ancho - 20)) deltaX *= -1;
-   if (yBola >= (alto - 20)) deltaY *= -1;
-   if (xBola < 0) deltaX *= -1;
-   if (yBola < 0) {deltaY *= -1; vidas=vidas-1; puede=0; xBola = (ancho*0.5-ancho*0.01); yBola = posybar2; posxbar1=(ancho*0.5-ancho*0.1);}
+   if (xBola >= (ancho - 20)) {deltaX *= -1;}
+   if (yBola >= (alto - 20)) {deltaY *= -1;}
+   if (xBola < 0) {deltaX *= -1;}
+   if (yBola < 0) {deltaY *= -1; vidas=vidas-1; puede=0; xBola = (ancho*0.5/*+ancho*0.001*/); yBola = posybar2+5; posxbar1=(ancho*0.5-ancho*0.1);}
    if (vidas==0){avanza=2;} //Indica que el usuario perdió
    if (bloquesRestantes==0){avanza=3;}//Indica que el usuario ganó
    
    //Comprobación de choque de la bola con la barra
-   if ((yBola == posybar2)&&(((xBola<(posxbar1+mitadbarra))&&(xBola>posxbar1))||((xBola>(posxbar2-mitadbarra))&&(xBola<posxbar2)))){
+   //if ((yBola == 80)&&(((xBola<(posxbar1+mitadbarra))&&(xBola>posxbar1))||((xBola>(posxbar2-mitadbarra))&&(xBola<posxbar2)))){
+   /*if ((yBola <= 80)&&(((xBola<(posxbar1+mitadbarra))&&(xBola>posxbar1))||((xBola>(posxbar2-mitadbarra))&&(xBola<posxbar2)))){
 	   deltaY *= -1; 
    }
    
-   if ((yBola == posybar2)&&((xBola==posxbar2)||(xBola==posxbar1))){
+   if ((yBola == 80)&&((xBola==posxbar2)||(xBola==posxbar1))){
 	   deltaY *= -1; 
 	   deltaX *= -1;
    }
    
-   if ((yBola < posybar2)&&((xBola==posxbar1)||((xBola)==posxbar2))){
+   if ((yBola < 80)&&((xBola==posxbar1)||((xBola)==posxbar2))){
 	   deltaX *= -1;
-   }
+   }*/
+   
+   int centroX = xBola + 10;
+   int centroY = yBola + 10;
+   
+   
+   
+   
+   //Choques con la barra 2.0:
+   int xBarra = posxbar1;
+   int yBarra = posybar1;
+   int anchoBarra = posxbar2 - posxbar1;
+   int altoBarra = posybar2 - posybar1;
+   
+   //Comprobar colision de la bola con la barra (general)
+	if ((centroX > (xBarra - radio)) && (centroX < (xBarra + anchoBarra + radio)) && 
+		  (centroY > (yBarra - radio)) && (centroY < (yBarra + altoBarra + radio))) {
+			  
+	    
+			  
+		int distanciaLadoIzquierdo = xBarra - centroX;
+		int distanciaLadoDerecho = centroX - (xBarra + anchoBarra);
+		int distanciaLadoArriba = centroY - (yBarra + altoBarra);
+		
+		if ((distanciaLadoArriba >= 0) && (distanciaLadoArriba < radio)) {
+			deltaY *= -1;
+			yBola += deltaY; //Impulso extra para solucionar un bug donde la bola rebotaba dentro de la barra
+			
+			//Aqui irian los angulos random
+			//calcular los deltas, con los signos adecuados
+		}
+		//Lado izq o derecho
+		if (((deltaX > 0) && (distanciaLadoIzquierdo >= 0) && (distanciaLadoIzquierdo < radio)) ||
+				((deltaX < 0) && (distanciaLadoDerecho >= 0) && (distanciaLadoDerecho < radio))) {
+			deltaX *= -1;
+		}
+	}
+	
+	
+	//Lado abajo
+	//if ((deltaY > 0) && (distanciaLadoAbajo >= 0) && (distanciaLadoAbajo < radio)) {
+	//	deltaY *= -1;
+	//	huboColision = GL_TRUE;	
+	//}
+	//Lado arriba
+   
+   
+
+   int anchoBloque = (ancho / 13) - 2*margen;
+   int altoBloque = (alto / 20) - 2*margen;
 
    //Comprobación de choque de la barra con los bloques
    for (int i = 0; i < 13; i++) {
@@ -602,12 +698,11 @@ void mueveBola(void)
 				continue;
 			}
 			
-			int centroX = xBola + 10;
-			int centroY = yBola + 10;
+			//int centroX = xBola + 10;
+			//int centroY = yBola + 10;
 			int xBloque = (ancho / 13) * i + margen;
 			int yBloque = alto * j / 20 + (3 * alto) / 4 + margen;
-			int anchoBloque = (ancho / 13) - 2*margen;
-			int altoBloque = (alto / 20) - 2*margen;
+			
 			
 			GLboolean huboColision = GL_FALSE;
 			
@@ -643,15 +738,21 @@ void mueveBola(void)
 			if (huboColision) {
 				bloquesRestantes--;
 				bloques[i][j] = GL_FALSE;
+				tono();
 				return;
 			}
 			
 		}
    }
+   glutPostRedisplay();
+   
 }
 
+
+
 void keyboard (unsigned char key, int x, int y)
-{		
+{	
+	
 	if(avanza==0){
 		if (((key >= 48) && (key <= 90)) || ((key >= 97) && (key <= 122)) || (key == 32)) {
 			nombre[indiceNombre++] = key;
@@ -672,16 +773,14 @@ void keyboard (unsigned char key, int x, int y)
 				break;
 		  case 'd':
 			if((avanza==1)&&(puede==1)){
-				anchobarra=posxbar2-posxbar1;
-				if(posxbar1<=(ancho - anchobarra)){
+				if(posxbar1<=(ancho-ancho*0.15625)){
 					posxbar1=posxbar1+10;
 					posxbar2=posxbar1+anchobarra;
 					glutPostRedisplay();}}
 					break;
 		  case 'a':
 			if((avanza==1)&&(puede==1)){
-				anchobarra=posxbar2-posxbar1;
-				if(posxbar1>=0.0){
+				if(posxbar1>0){
 					posxbar2=posxbar2-10;
 					posxbar1=posxbar2-anchobarra;
 					glutPostRedisplay();}}
@@ -705,12 +804,13 @@ int main(int argc, char** argv)
 {
    glutInit(&argc, argv);
    glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB | GLUT_DEPTH);
-   glutInitWindowSize(800, 500);
-   glutInitWindowPosition(283, 134);
+   glutInitWindowSize(1366, 700);
+   glutInitWindowPosition(0, 0);
    glutCreateWindow("Micronoid");
    init();
    glutDisplayFunc(display);
    glutReshapeFunc(reshape);
+   wiringPiSetup () ;
    glutKeyboardFunc(keyboard);
    glutMainLoop();
    return 0; 
